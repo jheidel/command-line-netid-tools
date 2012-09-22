@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+import sys
+import urllib2
+import re
+
+"""
+Script for resolving a name to netid(s)
+Jeff Heidel (c) 2012
+"""
+
+if len(sys.argv) != 2:
+    print "Utility resolves names from netids"
+    print "Usage: netid2name [netid]"
+    sys.exit(1)
+
+URL = "http://www.cornell.edu/search/index.cfm?tab=people&netid=" + sys.argv[1]
+response = urllib2.urlopen(URL)
+page_source = response.read().replace('\n','').replace('\r','')
+
+if not 'Search Cornell' in page_source:
+    print "ERROR: Could not retrieve directory"
+    sys.exit(1)
+
+if not 'peoplename' in page_source:
+    print "ERROR: netid invalid"
+    sys.exit(1)
+
+netid = re.search(".*peoplename.*<h2>(.*)<\/h2>.*", page_source, re.IGNORECASE)
+
+if not netid:
+    print "ERROR: name not found on page"
+    sys.exit(1)
+
+netid = (netid.group(1)).strip()
+
+print netid
+
+sys.exit(0)

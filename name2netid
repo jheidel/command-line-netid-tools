@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+import sys
+import urllib2
+import re
+
+"""
+Script for resolving a name to netid(s)
+Jeff Heidel (c) 2012
+"""
+
+if len(sys.argv) == 1:
+    print "Utility resolves names from netids"
+    print "Usage: name2netid [name search]"
+    sys.exit(1)
+
+URL = "http://www.cornell.edu/search/index.cfm?tab=people&q=" + "%20".join((sys.argv[1:]))
+response = urllib2.urlopen(URL)
+page_source = response.read().replace('\n','').replace('\r','')
+
+if not 'Search Cornell' in page_source:
+    print "ERROR: Could not retrieve directory"
+    sys.exit(1)
+
+if 'returned the following' in page_source:
+    #Time to do some table printing!
+    print "Multiple people returned!"
+
+    people = [("Name","NetID","Type")]
+    
+    tables = page_source.split("table") 
+    
+    #Populate a list of tables with people in them
+    peopletables = []
+    for tabl in tables:
+        if 'TYPE' in tabl and 'NETID' in tabl and 'nameresult' in tabl:
+            peopletables.append(tabl)
+
+    #Populate people with important info
+    for p in peopletables:
+        n = re.search(".*nameresult.*?<a.*?>(.*?)</a></td>.*", p, re.IGNORECASE)
+        if not n:
+            n = re.search(".*nameresult.*?<td>(.*?)</td>.*", p, re.IGNORECASE)
+        n = n.group(1)
+        e = re.search(".*NETID.*?<td>(.*?)</td>.*", p, re.IGNORECASE).group(1)
+        t = re.search(".*TYPE.*?<td>(.*?)</td>.*", p, re.IGNORECASE).group(1)
+        people.append((n.strip(), e.strip(), t.strip()))
+
+    #Render people to the terminal nicely
+    from table import Table
+    print Table(tuple(people)).create_table()
+
+    sys.exit(2)
+
+if 'returned over' in page_source:
+    print "ERROR: Returned too many results"
+    sys.exit(1)
+
+if not 'peoplename' in page_source:
+    print "ERROR: no people found of that name"
+    sys.exit(1)
+
+netid = re.search(".*NETID.*?<td>(.*?)<\/td>.*", page_source, re.IGNORECASE)
+
+if not netid:
+    print "ERROR: name not found on page"
+    sys.exit(1)
+
+netid = (netid.group(1)).strip()
+
+print netid
+
+sys.exit(0)
