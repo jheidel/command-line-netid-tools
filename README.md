@@ -1,7 +1,7 @@
 command-line-netid-tools
 ========================
 
-Command line scrips for resolving between names and netids.
+Command line scripts for resolving between names and netids.
 Will break if people search is ever changed.
 
 Scripts:
